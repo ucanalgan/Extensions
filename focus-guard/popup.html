@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Odak Bekçisi</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Odak Bekçisi</h1>
+    <span id="total-time" class="total">0dk</span>
+  </header>
+
+  <section id="focus-card" class="card">
+    <div id="focus-idle">
+      <div class="focus-row">
+        <span class="focus-label">Odak modu</span>
+        <select id="focus-duration">
+          <option value="25">25 dk</option>
+          <option value="50">50 dk</option>
+          <option value="90">90 dk</option>
+        </select>
+        <button id="focus-start-btn">Başlat</button>
+      </div>
+      <input id="focus-allowlist" type="text" placeholder="izin verilenler (virgülle ayır, örn. gmail.com)" />
+    </div>
+    <div id="focus-active" hidden>
+      <div class="focus-row">
+        <span class="focus-label">Odak modu aktif</span>
+        <span id="focus-countdown" class="focus-countdown">00:00</span>
+        <button id="focus-end-btn" class="danger-btn">Bitir</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="quick-add" class="card">
+    <div class="quick-row">
+      <span id="current-domain">-</span>
+      <input id="quick-minutes" type="number" min="1" max="600" placeholder="dk" />
+      <button id="quick-add-btn">Limit koy</button>
+    </div>
+  </section>
+
+  <section>
+    <ul id="usage-list" class="usage-list"></ul>
+    <p id="empty-state" class="empty-state" hidden>Bugün henüz takip edilen bir site yok.</p>
+  </section>
+
+  <footer>
+    <button id="open-options">Tüm limitleri yönet</button>
+  </footer>
+
+  <script src="common.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Odak Bekçisi — Ayarlar</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>Odak Bekçisi</h1>
+    <p class="subtitle">Günlük süre limitlerini, kategorileri ve zamanlamayı yönet.</p>
+
+    <section class="card">
+      <h2>Yeni limit ekle</h2>
+      <div class="row">
+        <input id="new-domain" type="text" placeholder="örn. youtube.com" />
+        <input id="new-minutes" type="number" min="1" max="1440" placeholder="dakika" />
+        <button id="add-limit-btn">Ekle</button>
+      </div>
+      <details class="schedule-details">
+        <summary>Zamanlama (opsiyonel)</summary>
+        <div id="new-limit-schedule" class="schedule-editor"></div>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Aktif limitler</h2>
+      <table id="limits-table">
+        <thead>
+          <tr><th>Site</th><th>Günlük limit</th><th>Zaman</th><th>Bugün</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="no-limits" class="empty-state" hidden>Henüz bir limit tanımlamadın.</p>
+    </section>
+
+    <section class="card">
+      <h2>Kategori ekle</h2>
+      <p class="hint">Birden fazla siteyi ortak bir günlük süre havuzunda sınırla (örn. sosyal medya).</p>
+      <div class="row">
+        <input id="new-cat-name" type="text" placeholder="kategori adı" />
+        <input id="new-cat-minutes" type="number" min="1" max="1440" placeholder="dakika" />
+      </div>
+      <input id="new-cat-domains" type="text" class="full-width" placeholder="siteler, virgülle ayır — örn. instagram.com, twitter.com, tiktok.com" />
+      <details class="schedule-details">
+        <summary>Zamanlama (opsiyonel)</summary>
+        <div id="new-cat-schedule" class="schedule-editor"></div>
+      </details>
+      <button id="add-cat-btn">Kategori ekle</button>
+    </section>
+
+    <section class="card">
+      <h2>Kategoriler</h2>
+      <table id="categories-table">
+        <thead>
+          <tr><th>Kategori</th><th>Siteler</th><th>Günlük limit</th><th>Zaman</th><th>Bugün</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="no-categories" class="empty-state" hidden>Henüz bir kategori tanımlamadın.</p>
+    </section>
+
+    <section class="card">
+      <h2>Son 7 gün</h2>
+      <div id="history-chart" class="history-chart"></div>
+    </section>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
