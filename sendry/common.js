@@ -1,7 +1,9 @@
-const MAX_HISTORY_DAYS = 14;
-const FIX_WINDOW_MS = 10 * 60 * 1000;
+// Top-level names use `var` so background.js can re-inject this file into a tab that already has it
+// (a second `const` declaration in the same content-script world would throw and abort the script).
+var MAX_HISTORY_DAYS = 14;
+var FIX_WINDOW_MS = 10 * 60 * 1000;
 
-const DEFAULT_SETTINGS = {
+var DEFAULT_SETTINGS = {
   enabled: true,
   detectors: {
     header: true,
@@ -26,7 +28,7 @@ const DEFAULT_SETTINGS = {
   extraSendWords: []
 };
 
-const DETECTOR_INFO = {
+var DETECTOR_INFO = {
   header: {
     label: "Başlık satırı gövdede",
     desc: "“Subject:”, “Konu:”, “Kime:” gibi satırlar mesajın içine yapışmış."
@@ -61,9 +63,9 @@ const DETECTOR_INFO = {
   }
 };
 
-const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
+var SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
 
-const AI_PHRASES = [
+var AI_PHRASES = [
   "işte e-posta", "işte e-postanız", "işte e-postan", "işte mail", "işte mesaj", "işte mesajınız",
   "işte düzenlenmiş", "işte revize", "işte daha resmi", "işte daha kısa", "işte size",
   "umarım yardımcı olur", "umarım bu yardımcı olur", "umarım işine yarar",
@@ -79,37 +81,37 @@ const AI_PHRASES = [
   "feel free to adjust", "feel free to customize", "subject line", "revised version", "polished version"
 ];
 
-const OPENER_RE = /^\s*(?:(?:tabii|tabi|elbette|kesinlikle|harika|sure|certainly|of course|absolutely)[^\n]{0,20}?)?(?:işte|here is|here's|here are)[^\n]{0,80}:\s*$/u;
+var OPENER_RE = /^\s*(?:(?:tabii|tabi|elbette|kesinlikle|harika|sure|certainly|of course|absolutely)[^\n]{0,20}?)?(?:işte|here is|here's|here are)[^\n]{0,80}:\s*$/u;
 
-const PLACEHOLDER_WORDS = [
+var PLACEHOLDER_WORDS = [
   "adınız soyadınız", "adınız ve soyadınız", "ad soyad", "isminiz", "öğrenci numaranız",
   "your name", "your company", "company name", "insert name", "insert date",
   "buraya ekle", "buraya yaz", "buraya yazın",
   "(isim)", "(ad)", "(adınız)", "(soyad)", "(tarih)", "(saat)", "(numara)", "(name)", "(date)"
 ];
 
-const GREETING_MARKERS = [
+var GREETING_MARKERS = [
   "saygılarımla", "iyi günler", "iyi çalışmalar", "teşekkür ederim", "sayın", "merhaba", "hocam",
   "regards", "sincerely", "dear", "thank you"
 ];
 
-const ABBREVIATIONS = new Set([
+var ABBREVIATIONS = new Set([
   "dr", "prof", "doç", "doc", "öğr", "ogr", "arş", "ars", "gör", "gor", "yrd", "uzm", "av", "müh", "muh",
   "sn", "st", "mr", "mrs", "ms", "no", "vb", "vs", "bkz", "örn", "orn", "mah", "cad", "sok", "apt",
   "inc", "ltd", "co", "jr", "sr", "etc"
 ]);
 
-const CAMEL_ALLOWLIST = new Set([
+var CAMEL_ALLOWLIST = new Set([
   "whatsapp", "powerpoint", "sharepoint", "soundcloud", "blackberry", "linkedin", "javascript",
   "typescript", "playstation", "mastercard", "wordpress", "photoshop", "coursera"
 ]);
 
-const SEND_WORDS = [
-  "gönder", "yanıtla", "yanıt gönder", "cevapla", "ilet", "paylaş", "yayınla",
-  "send", "reply", "post", "submit", "forward", "tweet"
+var SEND_WORDS = [
+  "gönder", "yanıtla", "yanıt gönder", "cevapla", "ilet", "paylaş", "yayınla", "yorum yap", "yorumla",
+  "send", "reply", "post", "submit", "forward", "tweet", "comment"
 ];
 
-const CANCEL_WORDS = [
+var CANCEL_WORDS = [
   "iptal", "vazgeç", "sil", "kapat", "taslak", "önizle", "önizleme",
   "cancel", "delete", "discard", "close", "draft", "preview"
 ];
@@ -296,14 +298,14 @@ function analyzeText(text, settings, opts = {}) {
 
 // ---------- one-click fixes ----------
 
-const FIX_LABELS = {
+var FIX_LABELS = {
   header: "Satırı sil",
   markdown: "İşaretleri temizle",
   glued: "Ayır",
   flattened: "Paragrafları ayır"
 };
 // Markdown goes first so "**Konu:** …" becomes a plain header line the header fix can remove.
-const FIX_ORDER = ["markdown", "header", "glued", "flattened"];
+var FIX_ORDER = ["markdown", "header", "glued", "flattened"];
 
 // A single-line message lost its line breaks, so glue points become breaks; otherwise just spaces.
 function fixMode(text) {
