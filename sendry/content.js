@@ -321,6 +321,131 @@
     win.find(hit.text.split("\n")[0], true, false, false, false, false, false);
   }
 
+  // ---------- one-click fixes ----------
+
+  const BLOCK_TAGS = /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TR|TABLE|SECTION|ARTICLE)$/;
+
+  function isTextControl(f) {
+    return f.tagName === "TEXTAREA" || f.tagName === "INPUT";
+  }
+
+  // Plain-text view of a field plus a way to map text offsets back to DOM positions.
+  // Block boundaries and <br> become "\n" so fixes see the same line structure the user sees.
+  function textModel(field) {
+    if (isTextControl(field)) return { text: field.value, locate: null };
+    let text = "";
+    const segs = [];
+    const walk = (node) => {
+      for (const child of node.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE) {
+          segs.push({ node: child, start: text.length });
+          text += child.data;
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          if (child.tagName === "BR") {
+            text += "\n";
+            continue;
+          }
+          const block = BLOCK_TAGS.test(child.tagName);
+          if (block && text && !text.endsWith("\n")) text += "\n";
+          walk(child);
+          if (block && text && !text.endsWith("\n")) text += "\n";
+        }
+      }
+    };
+    walk(field);
+    text = text.replace(/\n+$/, "");
+    const locate = (p) => {
+      for (const s of segs) {
+        if (p >= s.start && p <= s.start + s.node.data.length) return [s.node, p - s.start];
+      }
+      const next = segs.find((s) => s.start > p);
+      if (next) return [next.node, 0];
+      const last = segs[segs.length - 1];
+      return last ? [last.node, last.node.data.length] : [field, field.childNodes.length];
+    };
+    return { text, locate };
+  }
+
+  function applyEdit(field, edit) {
+    const doc = field.ownerDocument;
+    field.focus();
+    if (isTextControl(field)) {
+      field.setSelectionRange(edit.start, edit.end);
+    } else {
+      const { locate } = textModel(field);
+      const range = doc.createRange();
+      range.setStart(...locate(edit.start));
+      range.setEnd(...locate(edit.end));
+      const sel = doc.defaultView.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    if (edit.end > edit.start) doc.execCommand("delete");
+    edit.text.split("\n").forEach((part, i) => {
+      if (i > 0) doc.execCommand(isTextControl(field) ? "insertText" : "insertLineBreak", false, "\n");
+      if (part) doc.execCommand("insertText", false, part);
+    });
+  }
+
+  function fixApplies(field, id) {
+    return !(field.tagName === "INPUT" && id !== "markdown");
+  }
+
+  function fixableIds(result) {
+    return FIX_ORDER.filter((id) =>
+      result.issues.some((i) => i.id === id) &&
+      result.fields.some((f) => fixApplies(f, id) && computeFixEdits(id, textModel(f).text).length > 0));
+  }
+
+  function fixField(field, ids) {
+    const original = textModel(field).text;
+    const mode = fixMode(original);
+    for (const id of FIX_ORDER) {
+      if (!ids.includes(id) || !fixApplies(field, id)) continue;
+      const before = textModel(field).text;
+      const edits = computeFixEdits(id, before, mode);
+      if (edits.length === 0) continue;
+      edits.forEach((e) => applyEdit(field, e));
+
+      // Some pages block execCommand in text boxes; fall back to setting the value directly.
+      const expected = applyEditsToString(before, edits);
+      if (isTextControl(field) && field.value !== expected) {
+        const proto = field.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        Object.getOwnPropertyDescriptor(proto, "value").set.call(field, expected);
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    }
+    return textModel(field).text !== original;
+  }
+
+  function runFixes(result, ids, onSend) {
+    closeModal();
+    let changed = 0;
+    for (const field of result.fields) {
+      if (field.isConnected && fixField(field, ids)) changed += 1;
+    }
+    const next = runCheck(result.fields);
+    if (next.block) {
+      openModal(next, onSend);
+      return;
+    }
+    if (result.fields[0]) result.fields[0].focus();
+    showToast(changed > 0
+      ? "Düzeltildi. Metne bir göz at, sonra tekrar gönder. (Geri almak için Ctrl+Z)"
+      : "Düzeltilecek bir şey kalmadı.");
+  }
+
+  function showToast(message) {
+    const host = document.createElement("sendry-toast");
+    host.style.cssText = "all: initial; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2147483647;";
+    const root = host.attachShadow({ mode: "closed" });
+    const style = el("style");
+    style.textContent = TOAST_CSS;
+    root.append(style, el("div", "toast", message));
+    document.documentElement.appendChild(host);
+    setTimeout(() => host.remove(), 5000);
+  }
+
   function el(tag, cls, text) {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -368,12 +493,20 @@
     header.append(el("span", "badge", "Sendry"), title,
       el("p", "sub", `Bu mesajda ${blocking} sorun buldum. Karşı tarafa bu haliyle gidecek.`));
 
+    const fixable = fixableIds(result);
     const list = el("ul", "issues");
     for (const issue of result.issues) {
       const li = el("li", `issue ${issue.severity}`);
       const head = el("div", "issue-head");
       head.append(el("span", "dot"), el("strong", null, issue.title));
       if (issue.count > 1) head.append(el("span", "count", `×${issue.count}`));
+      if (fixable.includes(issue.id)) {
+        const btn = el("button", "fix", FIX_LABELS[issue.id]);
+        btn.type = "button";
+        btn.title = "Tek tıkla düzelt";
+        btn.addEventListener("click", () => runFixes(result, [issue.id], onSend));
+        head.append(btn);
+      }
       li.append(head, el("p", "detail", issue.detail));
       if (issue.hits.length > 0) {
         const snippets = el("div", "snippets");
@@ -394,7 +527,16 @@
     sendBtn.type = "button";
     const fixBtn = el("button", "primary", "Düzenlemeye dön");
     fixBtn.type = "button";
-    actions.append(sendBtn, fixBtn);
+    actions.append(sendBtn);
+    if (fixable.length > 1) {
+      const fixAllBtn = el("button", "ghost fix-all", "Hepsini düzelt");
+      fixAllBtn.type = "button";
+      // Run every enabled fix, not just the visible ones: cleaning "**Konu:**" can reveal a header line.
+      const allIds = FIX_ORDER.filter((id) => settings.detectors[id]);
+      fixAllBtn.addEventListener("click", () => runFixes(result, allIds, onSend));
+      actions.append(fixAllBtn);
+    }
+    actions.append(fixBtn);
 
     dialog.append(header, list, confirmRow, actions);
     backdrop.append(dialog);
@@ -487,7 +629,13 @@
     .high .dot { background: var(--high); }
     .medium .dot { background: var(--medium); }
     .low .dot { background: var(--low); }
-    .count { color: var(--muted); font-size: 12px; margin-left: auto; }
+    .issue-head strong { margin-right: auto; }
+    .count { color: var(--muted); font-size: 12px; }
+    button.fix {
+      all: unset; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent);
+      border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; white-space: nowrap;
+    }
+    button.fix:hover { background: var(--accent); color: var(--accent-fg); }
     .detail { margin: 4px 0 0 16px; color: var(--muted); font-size: 13px; }
     .snippets { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 0 16px; }
     .snippet {
@@ -507,6 +655,18 @@
     button.primary { background: var(--accent); color: var(--accent-fg); }
     button.ghost { color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
     button.ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.fix-all { color: var(--accent); border-color: var(--accent); }
     button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  `;
+
+  const TOAST_CSS = `
+    .toast {
+      font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 13px;
+      background: #1f2430; color: #ffffff; border-radius: 8px; padding: 10px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); max-width: min(90vw, 480px);
+    }
+    @media (prefers-color-scheme: dark) {
+      .toast { background: #e5e7eb; color: #17181d; }
+    }
   `;
 })();

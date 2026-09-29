@@ -173,6 +173,20 @@ mark {
   padding: 0 2px;
 }
 
+.fix-btn {
+  align-self: flex-start;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fix-btn:hover { opacity: 0.9; }
+
 .clean {
   color: var(--ok);
   font-size: 13px;

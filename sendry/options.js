@@ -112,6 +112,20 @@ function renderTest() {
     }
     out.append(box);
   }
+
+  const fixable = FIX_ORDER.filter((id) => issues.some((i) => i.id === id));
+  if (fixable.length > 0) {
+    const btn = document.createElement("button");
+    btn.className = "fix-btn";
+    btn.textContent = "Otomatik düzelt";
+    btn.title = fixable.map((id) => FIX_LABELS[id]).join(" · ");
+    btn.addEventListener("click", () => {
+      const input = document.getElementById("test-input");
+      input.value = autoFixText(input.value, FIX_ORDER.filter((id) => current.detectors[id]));
+      renderTest();
+    });
+    out.append(btn);
+  }
 }
 
 async function renderHistory() {

@@ -201,7 +201,8 @@ function detectGlued(text, folded) {
     const start = m.index + prev.length - back;
     const wordEnd = text.slice(m.index + m[0].length).search(/[^\p{L}]/u);
     const tail = wordEnd === -1 ? text.length - (m.index + m[0].length) : wordEnd;
-    hits.push({ index: start, length: back + 1 + 2 + tail });
+    const cut = m.index + prev.length + 1;
+    hits.push({ index: start, length: back + 1 + 2 + tail, cut, kind: m[2] === "," ? "comma" : "punct" });
   }
 
   // "HakkındaSayın"
@@ -209,11 +210,20 @@ function detectGlued(text, folded) {
     const before = text.slice(0, m.index).match(/\p{L}*$/u)[0];
     const word = before + m[0];
     if (CAMEL_ALLOWLIST.has(fold(word))) continue;
-    hits.push({ index: m.index - before.length, length: word.length });
+    hits.push({ index: m.index - before.length, length: word.length, cut: m.index + m[1].length, kind: "camel" });
   }
 
   // "Algan20220205023", "20220205023Bilişim"
-  hits.push(...collectHits(/\p{L}{3,}\d{5,}|\d{5,}\p{Lu}\p{Ll}{2,}/gu, text));
+  for (const m of text.matchAll(/\p{L}{3,}(?=\d{5,})/gu)) {
+    const cut = m.index + m[0].length;
+    const digits = text.slice(cut).match(/^\d+/)[0];
+    hits.push({ index: m.index, length: m[0].length + digits.length, cut, kind: "digit" });
+  }
+  for (const m of text.matchAll(/\d{5,}(?=\p{Lu}\p{Ll}{2,})/gu)) {
+    const cut = m.index + m[0].length;
+    const word = text.slice(cut).match(/^\p{L}+/u)[0];
+    hits.push({ index: m.index, length: m[0].length + word.length, cut, kind: "digit" });
+  }
   return hits;
 }
 
@@ -282,6 +292,117 @@ function analyzeText(text, settings, opts = {}) {
   }
 
   return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+}
+
+// ---------- one-click fixes ----------
+
+const FIX_LABELS = {
+  header: "Satırı sil",
+  markdown: "İşaretleri temizle",
+  glued: "Ayır",
+  flattened: "Paragrafları ayır"
+};
+// Markdown goes first so "**Konu:** …" becomes a plain header line the header fix can remove.
+const FIX_ORDER = ["markdown", "header", "glued", "flattened"];
+
+// A single-line message lost its line breaks, so glue points become breaks; otherwise just spaces.
+function fixMode(text) {
+  return text.trim().includes("\n") ? "space" : "break";
+}
+
+function glueReplacement(hit, mode) {
+  if (mode === "space") return " ";
+  if (hit.kind === "comma") return hit.cut < 60 ? "\n\n" : "\n";
+  if (hit.kind === "digit") return "\n";
+  return "\n\n";
+}
+
+function headerEdits(text) {
+  const cuts = detectGlued(text, fold(text)).map((h) => h.cut);
+  return dedupeHits(detectHeader(text)).map((h) => {
+    const lineStart = text.lastIndexOf("\n", h.index - 1) + 1;
+    const atLineStart = !text.slice(lineStart, h.index).trim();
+    const lineEnd = text.indexOf("\n", h.index);
+    let start = atLineStart ? lineStart : h.index;
+    let end;
+    // A real header line is short; a very long "line" is the whole message with its breaks lost.
+    if (lineEnd !== -1 && lineEnd - h.index <= 200) {
+      end = atLineStart ? lineEnd + 1 : lineEnd;
+    } else {
+      // Flattened text: the subject runs straight into the body, so cut at the first glue point.
+      const cut = cuts.filter((c) => c > h.index + h.length && c - h.index <= 200).sort((a, b) => a - b)[0];
+      end = cut !== undefined ? cut : h.index + h.length + (text.slice(h.index + h.length).match(/^\s*/)[0].length);
+    }
+    if (start === 0) {
+      while (end < text.length && /\s/.test(text[end])) end += 1;
+    } else if (!atLineStart) {
+      while (start > 0 && text[start - 1] === " ") start -= 1;
+    }
+    return { start, end, text: "" };
+  });
+}
+
+function markdownEdits(text) {
+  const edits = [];
+  for (const m of text.matchAll(/\*\*([^*\n]{1,80})\*\*/g)) {
+    edits.push({ start: m.index, end: m.index + 2, text: "" });
+    edits.push({ start: m.index + m[0].length - 2, end: m.index + m[0].length, text: "" });
+  }
+  for (const m of text.matchAll(/^[ \t]*#{1,6}[ \t]+/gm)) {
+    edits.push({ start: m.index, end: m.index + m[0].length, text: "" });
+  }
+  for (const m of text.matchAll(/^[ \t]*```[^\n]*\n?/gm)) {
+    edits.push({ start: m.index, end: m.index + m[0].length, text: "" });
+  }
+  return edits;
+}
+
+function glueEdits(text, mode) {
+  const seen = new Set();
+  const edits = [];
+  for (const h of detectGlued(text, fold(text))) {
+    if (seen.has(h.cut)) continue;
+    seen.add(h.cut);
+    edits.push({ start: h.cut, end: h.cut, text: glueReplacement(h, mode) });
+  }
+  return edits;
+}
+
+// Returns non-overlapping edits sorted from the end of the text to the start,
+// so applying them in order never shifts the positions of the ones still to come.
+function computeFixEdits(id, text, mode = fixMode(text)) {
+  let edits = [];
+  if (id === "header") edits = headerEdits(text);
+  else if (id === "markdown") edits = markdownEdits(text);
+  else if (id === "glued") edits = glueEdits(text, mode);
+  else if (id === "flattened") edits = glueEdits(text, "break");
+
+  // Safety net: a fix only trims artifacts, it never removes a large chunk of the message.
+  edits = edits.filter((e) => e.end - e.start <= 200);
+  edits.sort((a, b) => b.start - a.start || b.end - a.end);
+  const out = [];
+  let floor = Infinity;
+  for (const e of edits) {
+    if (e.end > floor) continue;
+    out.push(e);
+    floor = e.start;
+  }
+  return out;
+}
+
+function applyEditsToString(text, edits) {
+  let t = text;
+  for (const e of edits) t = t.slice(0, e.start) + e.text + t.slice(e.end);
+  return t;
+}
+
+function autoFixText(text, ids) {
+  const mode = fixMode(text);
+  let t = text;
+  for (const id of FIX_ORDER) {
+    if (ids.includes(id)) t = applyEditsToString(t, computeFixEdits(id, t, mode));
+  }
+  return t;
 }
 
 function computeReadSeconds(text, settings) {
