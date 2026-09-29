@@ -9,6 +9,10 @@
     }
   }
 
+  // Open, not closed: a closed root would protect nothing (the page can remove the host element
+  // either way), and an open one lets accessibility tools and the e2e tests reach the modal.
+  const SHADOW_MODE = "open";
+
   const MODAL_CSS = `
     :host { all: initial; }
     .backdrop {
@@ -140,7 +144,7 @@
   if (extensionAlive()) {
     getSettings().then(applySettings).catch(() => {});
     const onStorage = (changes, area) => {
-      if (area === "local" && changes.settings) applySettings(mergeSettings(changes.settings.newValue));
+      if (isSettingsChange(changes, area)) applySettings(mergeSettings(changes.settings.newValue));
     };
     try {
       chrome.storage.onChanged.addListener(onStorage);
@@ -779,7 +783,7 @@
   function showToast(message) {
     const host = document.createElement("sendry-toast");
     host.style.cssText = "all: initial; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2147483647;";
-    const root = host.attachShadow({ mode: "closed" });
+    const root = host.attachShadow({ mode: SHADOW_MODE });
     const style = el("style");
     style.textContent = TOAST_CSS;
     root.append(style, el("div", "toast", message));
@@ -793,7 +797,7 @@
     closeModal();
     const host = document.createElement("sendry-modal");
     host.style.cssText = "all: initial; position: fixed; inset: 0; z-index: 2147483647;";
-    const root = host.attachShadow({ mode: "closed" });
+    const root = host.attachShadow({ mode: SHADOW_MODE });
 
     const act = (action) => {
       closeModal();

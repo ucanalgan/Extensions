@@ -436,15 +436,46 @@ function mergeSettings(raw) {
   };
 }
 
+// Settings live in storage.sync so they follow the user's Chrome profile to other devices.
+// Stats stay in storage.local: they are per-device and change far too often for sync quotas.
+// If sync is unavailable (disabled, over quota), settings quietly fall back to local.
+async function readSettingsRaw() {
+  try {
+    const { settings } = await chrome.storage.sync.get("settings");
+    if (settings) return settings;
+  } catch {
+    // sync unavailable; fall through to local
+  }
+  const { settings: local } = await chrome.storage.local.get("settings");
+  if (local) {
+    // Settings saved by Sendry 1.1 or earlier: move them to sync once.
+    try {
+      await chrome.storage.sync.set({ settings: local });
+      await chrome.storage.local.remove("settings");
+    } catch {
+      // keep them in local
+    }
+  }
+  return local;
+}
+
 async function getSettings() {
-  const { settings } = await chrome.storage.local.get("settings");
-  return mergeSettings(settings);
+  return mergeSettings(await readSettingsRaw());
 }
 
 async function saveSettings(partial) {
   const next = mergeSettings({ ...(await getSettings()), ...partial });
-  await chrome.storage.local.set({ settings: next });
+  try {
+    await chrome.storage.sync.set({ settings: next });
+    await chrome.storage.local.remove("settings");
+  } catch {
+    await chrome.storage.local.set({ settings: next });
+  }
   return next;
+}
+
+function isSettingsChange(changes, area) {
+  return (area === "sync" || area === "local") && !!changes.settings && !!changes.settings.newValue;
 }
 
 function emptyDayStats() {

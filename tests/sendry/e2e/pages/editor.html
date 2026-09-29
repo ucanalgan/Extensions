@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Editör</title>
+  <script>window.__log = [];</script>
+</head>
+<body style="margin: 4px">
+  <div id="editor" contenteditable="true" style="min-height: 100px"></div>
+  <button id="send" type="button">Gönder</button>
+  <script>
+    document.getElementById("editor").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.ctrlKey) window.__log.push("editor:ctrl-enter");
+    });
+    document.getElementById("send").addEventListener("click", () => window.__log.push("editor:sent"));
+  </script>
+</body>
+</html>

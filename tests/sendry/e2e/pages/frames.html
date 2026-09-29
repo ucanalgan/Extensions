@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>İframe editörler</title>
+  <script>window.__log = [];</script>
+</head>
+<body>
+  <!-- A TinyMCE/CKEditor style editor in a same-origin iframe, and the same editor served from a
+       different origin. The page itself is only a small shell around the frame. -->
+  <iframe id="same" src="editor.html" style="width: 600px; height: 160px"></iframe>
+  <iframe id="cross" style="width: 600px; height: 160px"></iframe>
+  <script>
+    const other = location.hostname === "localhost" ? "127.0.0.1" : "localhost";
+    document.getElementById("cross").src = `http://${other}:${location.port}/editor.html`;
+  </script>
+</body>
+</html>

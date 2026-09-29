@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Portal ve Gmail benzeri</title>
+  <script>window.__log = [];</script>
+</head>
+<body>
+  <!-- School-portal style: a plain form with a subject input, textarea and submit button. -->
+  <form id="portal">
+    <input id="subject" type="text" placeholder="Konu" />
+    <textarea id="body" rows="8" cols="80"></textarea>
+    <button type="submit">Gönder</button>
+    <button type="button" id="cancel">İptal</button>
+  </form>
+
+  <!-- Gmail style: a contenteditable editor and a div "button" with a tooltip, outside any form. -->
+  <div id="compose" role="dialog">
+    <div id="editor" contenteditable="true" style="min-height: 60px; border: 1px solid #999"></div>
+    <div role="button" id="gmail-send" data-tooltip="Gönder (Ctrl-Enter)">Gönder</div>
+  </div>
+
+  <script>
+    document.getElementById("portal").addEventListener("submit", (e) => {
+      e.preventDefault();
+      window.__log.push("portal:submitted");
+    });
+    document.getElementById("cancel").addEventListener("click", () => window.__log.push("portal:cancel"));
+    document.getElementById("gmail-send").addEventListener("click", () => window.__log.push("gmail:sent"));
+    document.getElementById("editor").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.ctrlKey) window.__log.push("gmail:ctrl-enter");
+    });
+  </script>
+</body>
+</html>

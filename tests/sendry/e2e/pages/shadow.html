@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Web bileşenleri</title>
+  <script>window.__log = [];</script>
+</head>
+<body>
+  <!-- Reddit-style composers: the form, textarea and button all live inside a shadow root.
+       The closed variant can only be reached through chrome.dom.openOrClosedShadowRoot. -->
+  <x-composer id="open-composer" mode="open" aria-label="Comment composer"></x-composer>
+  <x-composer id="closed-composer" mode="closed" aria-label="Comment composer"></x-composer>
+
+  <!-- A custom-element button whose label comes from slotted text. -->
+  <textarea id="plain" rows="3" cols="60"></textarea>
+  <x-send id="custom-send">Gönder</x-send>
+
+  <script>
+    window.__roots = {};
+    customElements.define("x-composer", class extends HTMLElement {
+      connectedCallback() {
+        const mode = this.getAttribute("mode");
+        const root = this.attachShadow({ mode });
+        window.__roots[this.id] = root;
+        root.innerHTML = '<form><textarea rows="4" cols="60"></textarea><button type="submit">Comment</button></form>';
+        root.querySelector("form").addEventListener("submit", (e) => {
+          e.preventDefault();
+          window.__log.push(`${this.id}:submitted`);
+        });
+      }
+    });
+    customElements.define("x-send", class extends HTMLElement {
+      connectedCallback() {
+        this.attachShadow({ mode: "open" }).innerHTML = "<span><slot></slot></span>";
+        this.addEventListener("click", () => window.__log.push("custom-send:clicked"));
+      }
+    });
+  </script>
+</body>
+</html>
