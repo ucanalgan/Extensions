@@ -317,8 +317,14 @@ function detectCustom({ folded, settings }) {
 //
 //   severity  "high" | "medium" block the send; "low" is shown only when something else blocks.
 //   bodyOnly  skipped for single-line inputs such as a subject field.
+//   covers    ids whose hits inside this detector's hits are dropped, so one problem shows once.
 
-var FLAT_EXAMPLE = "Sayın Hocam, " + "bu dönem dersinize devam etmekte zorlanıyorum ve durumu açıklamak istedim. ".repeat(5) + "Saygılarımla, Umut";
+var FLAT_EXAMPLE =
+  "Sayın Hocam, bu dönem yarı zamanlı çalıştığım için salı günleri derse katılamayacağım. " +
+  "Duyurunuzda cuma öğleden sonra odanıza gelinebileceğini belirtmiştiniz. " +
+  "Uygun görürseniz cuma günü saat on ikide ofisinize gelmek isterim. " +
+  "Bu saat uygun değilse belirleyeceğiniz başka bir zamana da uyum sağlayabilirim. " +
+  "Saygılarımla, Umut";
 
 var DETECTORS = [
   {
@@ -431,6 +437,7 @@ var DETECTORS = [
     detail: "Bu not karşı tarafa değil sana yazılmış; mesajdan çıkarılmalı.",
     severity: "high",
     bodyOnly: true,
+    covers: ["aiPhrase", "placeholder"],
     detect: detectAiNote,
     examples: {
       catch: ["Sayın Hocam,\n\nNot: Tarihleri kendine göre düzenleyebilirsin.", "Note: Feel free to adjust the tone.", "İpucu: Kendi bilgilerini ekleyebilirsin."],
@@ -664,14 +671,43 @@ function dedupeHits(hits) {
   return out;
 }
 
+// Blank out AI citation markers (same length, so offsets don't move) before the other checks run.
+// ":contentReference[oaicite:0]{index=0}" is one problem, not also a placeholder and a glued word.
+function maskArtifacts(text) {
+  let masked = text;
+  for (const h of detectAiArtifact({ text })) {
+    masked = masked.slice(0, h.index) + " ".repeat(h.length) + masked.slice(h.index + h.length);
+  }
+  return masked;
+}
+
 function analyzeText(text, settings, opts = {}) {
-  const ctx = { text, folded: fold(text), settings, now: opts.now || new Date() };
-  const issues = [];
+  const now = opts.now || new Date();
+  const masked = maskArtifacts(text);
+  const raw = { text, folded: fold(text), settings, now };
+  const ctx = masked === text ? raw : { text: masked, folded: fold(masked), settings, now };
+  const found = new Map();
   for (const d of DETECTORS) {
     if (!d.detect || !settings.detectors[d.id]) continue;
     if (opts.singleLine && d.bodyOnly) continue;
-    const hits = dedupeHits(d.detect(ctx));
-    if (hits.length === 0) continue;
+    found.set(d.id, dedupeHits(d.detect(d.id === "aiArtifact" ? raw : ctx)));
+  }
+  // A detector that `covers` others claims their hits inside its own: an AI note line that says
+  // "feel free to adjust" is one AI note, not also an AI phrase.
+  for (const d of DETECTORS) {
+    if (!d.covers || !found.has(d.id)) continue;
+    const outer = found.get(d.id);
+    for (const id of d.covers) {
+      if (!found.has(id)) continue;
+      found.set(id, found.get(id).filter((h) =>
+        !outer.some((o) => h.index >= o.index && h.index + h.length <= o.index + o.length)));
+    }
+  }
+
+  const issues = [];
+  for (const d of DETECTORS) {
+    const hits = found.get(d.id);
+    if (!hits || hits.length === 0) continue;
     issues.push({
       id: d.id,
       severity: typeof d.severity === "function" ? d.severity(hits) : d.severity,

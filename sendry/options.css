@@ -102,10 +102,50 @@ input[type="checkbox"] {
   flex-direction: row;
 }
 
-.detector-options .desc {
+.detector-options .check {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+
+.detector-options .check:last-child { border-bottom: none; }
+
+.detector-options .head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.detector-options .tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+
+.detector-options .tag.fixable {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.detector-options .desc,
+.detector-options .why,
+.detector-options .example {
   display: block;
   color: var(--muted);
   font-size: 12px;
+  margin-top: 2px;
+}
+
+.detector-options .why { font-style: italic; }
+
+.detector-options .example {
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-word;
 }
 
 .grid {

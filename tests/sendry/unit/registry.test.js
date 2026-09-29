@@ -60,6 +60,27 @@ test("fixing a detector's catch examples makes that detector go quiet", () => {
   }
 });
 
+test("an AI citation marker is reported once, not also as a placeholder or glued word", () => {
+  assert.deepEqual(idsIn("Rapor hazır :contentReference[oaicite:0]{index=0} ve gönderildi."), ["aiArtifact"]);
+  assert.deepEqual(idsIn("[cite_start]Proje yeni başladı.[cite: 1] Detaylar ekte."), ["aiArtifact"]);
+});
+
+test("each catch example is reported by its own detector only, unless another problem is obviously there too", () => {
+  // Keeps detectors from overlapping: one real problem should produce one issue in the modal.
+  const allowedExtras = {
+    "Tabii! İşte e-postanız:\n\nSayın Hocam": [],
+    "Seçenek 1:\nSayın Hocam\n\nSeçenek 2:\nMerhaba Hocam": [],
+    "**Versiyon 2:**\nMerhaba": ["markdown"],
+    "Sayın Hocam,\nMerhaba.\nSaygılarımla\nUmut\n\nSayın Hocam,\nSaygılarımla": []
+  };
+  for (const d of S.DETECTORS.filter((x) => x.examples)) {
+    for (const text of d.examples.catch) {
+      const extras = idsIn(text).filter((id) => id !== d.id && !(allowedExtras[text] || []).includes(id));
+      assert.deepEqual(extras, [], `${d.id} example also triggers ${extras}: ${JSON.stringify(text)}`);
+    }
+  }
+});
+
 test("low-severity signals never block on their own", () => {
   const issues = plain(S.analyzeText("Toplantı — bence — iptal edilmeli.", S.DEFAULT_SETTINGS, { now: NOW }));
   assert.deepEqual(issues.map((i) => [i.id, i.severity]), [["typography", "low"]]);

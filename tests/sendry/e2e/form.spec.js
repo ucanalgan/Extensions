@@ -119,6 +119,31 @@ test("rich editor: fix all rebuilds a single-block message without losing it", a
   expect(text.length).toBeGreaterThan(SENT_EMAIL.length * 0.8);
 });
 
+test("Gmail reply: the quoted message below is ignored, only the new text is checked", async ({ page, sendry }) => {
+  await page.locator("#editor").evaluate((el) => {
+    el.innerHTML =
+      "<div>Merhaba Ayşe,</div><div><br></div><div>Tamamdır, cuma görüşürüz.</div><div><br></div><div>Saygılarımla</div>" +
+      '<div class="gmail_quote"><div class="gmail_attr">---------- Forwarded message ---------<br>From: Ali<br>Subject: Toplantı</div>' +
+      "<blockquote>Merhaba,<br>Toplantı [saat] olsun.<br>Saygılarımla</blockquote></div>";
+    el.dispatchEvent(new InputEvent("input", { bubbles: true }));
+  });
+  await page.click("#gmail-send");
+
+  await expect.poll(() => sendry.log()).toEqual(["gmail:sent"]);
+  await expect(sendry.modal).toHaveCount(0);
+});
+
+test("new detectors show up in the page: wrong weekday and ChatGPT citation markers", async ({ page, sendry }) => {
+  await page.fill("#body", "Sayın Hocam,\n\n29 Eylül 2026 Pazartesi günü uygunum :contentReference[oaicite:0]{index=0}\n\nSaygılarımla");
+  await sendButton(page).click();
+
+  expect(await sendry.issueTitles()).toEqual(["AI kaynak kalıntısı", "Tarih ile gün uyuşmuyor"]);
+  await expect(sendry.modal.locator(".detail").nth(1)).toHaveText("29.09.2026 Salı gününe denk geliyor, metinde Pazartesi yazıyor.");
+
+  await sendry.fixButton("Kalıntıları sil").click();
+  expect(await page.inputValue("#body")).toBe("Sayın Hocam,\n\n29 Eylül 2026 Pazartesi günü uygunum\n\nSaygılarımla");
+});
+
 test("a disabled site is left alone", async ({ page, sendry }) => {
   await sendry.setSettings({ disabledSites: ["localhost"] });
   await page.reload();
