@@ -1,0 +1,196 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1f2430;
+  --muted: #6b7280;
+  --accent: #d97706;
+  --accent-fg: #ffffff;
+  --card: #f3f4f6;
+  --border: #e5e7eb;
+  --danger: #dc2626;
+  --ok: #059669;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17181d;
+    --fg: #e5e7eb;
+    --muted: #9ca3af;
+    --card: #23252c;
+    --border: #33353d;
+    --danger: #f87171;
+    --ok: #34d399;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 300px;
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 15px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 12px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.site-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.site {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.status.on { color: var(--ok); }
+.status.off { color: var(--danger); }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.num {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.num.warn { color: var(--accent); }
+.num.ok { color: var(--ok); }
+
+.lbl {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.detector-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.detector-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+.detector-list .n {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.empty-state {
+  color: var(--muted);
+  text-align: center;
+  margin: 8px 0 0;
+}
+
+button {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+button:hover { opacity: 0.9; }
+
+.small-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+footer button {
+  width: 100%;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex: none;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 3px;
+  top: 3px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+
+.switch input:checked + .slider { background: var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(14px); }
+.switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 2px; }
