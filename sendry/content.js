@@ -63,6 +63,7 @@
       padding: 4px 8px; word-break: break-word;
     }
     .snippet:hover, .snippet:focus-visible { border-color: var(--accent); }
+    .note { color: var(--muted); font-size: 12px; margin: -2px 0 2px 8px; }
     mark { background: var(--mark); color: var(--mark-fg); border-radius: 3px; padding: 0 2px; }
     .confirm { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 4px; font-size: 13px; cursor: pointer; }
     .confirm[hidden] { display: none; }
@@ -255,7 +256,7 @@
 
   function fieldText(el) {
     if (isTextControl(el)) return el.value || "";
-    return el.innerText || "";
+    return textModel(el).text;
   }
 
   function markPaste(root, text) {
@@ -516,11 +517,11 @@
     const full = fieldText(hit.field);
     const start = Math.max(0, hit.index - 22);
     const end = Math.min(full.length, hit.index + hit.length + 22);
-    const clean = (s) => s.replace(/\n/g, " ↵ ");
     return {
-      before: (start > 0 ? "…" : "") + clean(full.slice(start, hit.index)),
-      match: clean(full.slice(hit.index, hit.index + hit.length)),
-      after: clean(full.slice(hit.index + hit.length, end)) + (end < full.length ? "…" : "")
+      before: (start > 0 ? "…" : "") + visibleText(full.slice(start, hit.index)),
+      match: visibleText(full.slice(hit.index, hit.index + hit.length)),
+      after: visibleText(full.slice(hit.index + hit.length, end)) + (end < full.length ? "…" : ""),
+      note: hit.note || ""
     };
   }
 
@@ -653,21 +654,33 @@
       f.setSelectionRange(hit.index, hit.index + hit.length);
       return;
     }
+    // Hit offsets come from the same text model, so they map straight back to DOM positions.
     const doc = f.ownerDocument;
-    const win = doc.defaultView;
-    const sel = win.getSelection();
+    const { locate } = textModel(f);
     const range = doc.createRange();
-    range.setStart(f, 0);
-    range.collapse(true);
+    range.setStart(...locate(hit.index));
+    range.setEnd(...locate(hit.index + hit.length));
+    const sel = doc.defaultView.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
-    win.find(hit.text.split("\n")[0], true, false, false, false, false, false);
+    const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
+    if (anchor) anchor.scrollIntoView({ block: "nearest" });
   }
 
   const BLOCK_TAGS = /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TR|TABLE|SECTION|ARTICLE)$/;
 
+  // Quoted history in replies and forwards (Gmail, Outlook, Thunderbird, Yahoo, Apple Mail).
+  // It isn't what the user is writing, and its "From:/Subject:" lines and second sign-off would
+  // otherwise trigger the header and duplicate checks on every reply.
+  const QUOTE_SELECTOR = [
+    "blockquote", ".gmail_quote", ".gmail_attr", "[type=cite]", "#divRplyFwdMsg", "#appendonsend",
+    ".moz-cite-prefix", ".yahoo_quoted", "[data-marker=__QUOTED_TEXT__]"
+  ].join(", ");
+
   // Plain-text view of a field plus a way to map text offsets back to DOM positions.
   // Block boundaries and <br> become "\n" so fixes see the same line structure the user sees.
+  // For rich editors this is also the text Sendry analyses, so hits, fixes and selections all share
+  // one set of offsets.
   function textModel(field) {
     if (isTextControl(field)) return { text: field.value, locate: null };
     let text = "";
@@ -682,6 +695,8 @@
             text += "\n";
             continue;
           }
+          if (child.matches(QUOTE_SELECTOR) || child.hidden) continue;
+          if (child.style && child.style.display === "none") continue;
           const block = BLOCK_TAGS.test(child.tagName);
           if (block && text && !text.endsWith("\n")) text += "\n";
           walk(child);
@@ -842,6 +857,8 @@
           chip.append(parts.before, el("mark", null, parts.match), parts.after);
           chip.addEventListener("click", () => act({ kind: "select", issueIndex, hitIndex }));
           snippets.append(chip);
+          // Per-hit explanation (e.g. which weekday a date really is), unless it already is the detail.
+          if (parts.note && parts.note !== issue.detail) snippets.append(el("span", "note", parts.note));
         });
         li.append(snippets);
       }

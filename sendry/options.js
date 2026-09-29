@@ -13,22 +13,32 @@ function parseLines(value, host = false) {
 function renderDetectorOptions() {
   const wrap = document.getElementById("detector-options");
   wrap.innerHTML = "";
-  for (const [id, info] of Object.entries(DETECTOR_INFO)) {
+  const span = (cls, content) => {
+    const s = document.createElement("span");
+    s.className = cls;
+    s.textContent = content;
+    return s;
+  };
+  for (const info of DETECTORS) {
     const label = document.createElement("label");
     label.className = "check";
     const input = document.createElement("input");
     input.type = "checkbox";
-    input.checked = current.detectors[id];
+    input.checked = current.detectors[info.id];
     input.addEventListener("change", async () => {
-      current = await saveSettings({ detectors: { ...current.detectors, [id]: input.checked } });
+      current = await saveSettings({ detectors: { ...current.detectors, [info.id]: input.checked } });
       renderTest();
     });
+
     const text = document.createElement("span");
-    text.textContent = info.label;
-    const desc = document.createElement("span");
-    desc.className = "desc";
-    desc.textContent = info.desc;
-    text.append(desc);
+    const head = span("head", info.label);
+    if (info.severity === "low") head.append(span("tag", "sadece bilgi"));
+    if (info.fixable) head.append(span("tag fixable", "tek tıkla düzeltilir"));
+    text.append(head, span("desc", info.desc), span("why", info.why));
+    if (info.examples) {
+      const sample = info.examples.catch[0];
+      text.append(span("example", `Örn: ${visibleText(sample.length > 70 ? sample.slice(0, 70) + "…" : sample)}`));
+    }
     label.append(input, text);
     wrap.append(label);
   }
@@ -99,14 +109,13 @@ function renderTest() {
     for (const hit of issue.hits.slice(0, 3)) {
       const start = Math.max(0, hit.index - 22);
       const end = Math.min(text.length, hit.index + hit.length + 22);
-      const clean = (s) => s.replace(/\n/g, " ↵ ");
       const code = document.createElement("code");
       const mark = document.createElement("mark");
-      mark.textContent = clean(hit.text);
+      mark.textContent = visibleText(hit.text);
       code.append(
-        (start > 0 ? "…" : "") + clean(text.slice(start, hit.index)),
+        (start > 0 ? "…" : "") + visibleText(text.slice(start, hit.index)),
         mark,
-        clean(text.slice(hit.index + hit.length, end)) + (end < text.length ? "…" : "")
+        visibleText(text.slice(hit.index + hit.length, end)) + (end < text.length ? "…" : "")
       );
       box.append(code);
     }

@@ -35,13 +35,14 @@ test("placeholders", () => {
 test("placeholder look-alikes are left alone", () => {
   for (const text of [
     "Kaynak [1] ve [2] numaralı makaleler",
-    "Detaylar [burada](https://example.com) yazıyor",
     "Adresim <ali@example.com>",
     "XX. yüzyılın başında",
     "XXL beden"
   ]) {
     assert.deepEqual(ids(text), [], text);
   }
+  // A markdown link is a markdown problem, not an unfilled placeholder.
+  assert.deepEqual(ids("Detaylar [burada](https://example.com) yazıyor"), ["markdown"]);
 });
 
 test("AI chat phrases and openers", () => {
