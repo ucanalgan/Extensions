@@ -219,7 +219,7 @@ function detectTimeRange({ text }) {
   const hits = [];
   const minutes = (h, m) => Number(h) * 60 + Number(m);
   const valid = (h, m) => (Number(h) < 24 && Number(m) < 60) || (Number(h) === 24 && Number(m) === 0);
-  for (const m of text.matchAll(/(?<![\d.:])(\d{1,2})[.:](\d{2})\s*[-–—]\s*(\d{1,2})[.:](\d{2})(?![\d.:])(?!\s*(?:tl|₺|\$|€|usd|eur|%|puan|gpa))/giu)) {
+  for (const m of text.matchAll(/(?<![\d.:])(\d{1,2})[.:](\d{2})\s*[-–\u2014]\s*(\d{1,2})[.:](\d{2})(?![\d.:])(?!\s*(?:tl|₺|\$|€|usd|eur|%|puan|gpa))/giu)) {
     const [, h1, m1, h2, m2] = m;
     let note = null;
     if (!valid(h1, m1) || !valid(h2, m2)) note = "Geçersiz saat.";
@@ -254,7 +254,7 @@ function detectEmojiBullets({ text }) {
 }
 
 function detectTypography({ text }) {
-  const dashes = collectHits(/—/g, text);
+  const dashes = collectHits(/\u2014/g, text);
   return dashes.length >= 2 ? dashes : [];
 }
 
@@ -577,15 +577,15 @@ var DETECTORS = [
   {
     id: "typography",
     label: "AI yazım izleri",
-    desc: "Türkçe klavyeyle neredeyse hiç yazılmayan uzun tire (—) gibi karakterlerin sık kullanımı.",
+    desc: "Türkçe klavyeyle neredeyse hiç yazılmayan uzun tire karakterinin sık kullanımı.",
     why: "Tek başına sorun değildir, ama metnin kopyalandığına işaret eder. Sadece başka bir sorun varsa gösterilir.",
     title: "Metin kopyalanmış gibi görünüyor",
-    detail: "Uzun tire (—) Türkçe klavyeyle pek yazılmaz; AI metinlerinde çok sık görülür.",
+    detail: "Uzun tire Türkçe klavyeyle pek yazılmaz; AI metinlerinde çok sık görülür.",
     severity: "low",
     detect: detectTypography,
     examples: {
-      catch: ["Toplantı — bence — iptal edilmeli."],
-      pass: ["Toplantı - bence - iptal edilmeli.", "Tek bir — tire"]
+      catch: ["Toplantı \u2014 bence \u2014 iptal edilmeli."],
+      pass: ["Toplantı - bence - iptal edilmeli.", "Tek bir \u2014 tire"]
     }
   },
   {

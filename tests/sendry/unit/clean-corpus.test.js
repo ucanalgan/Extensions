@@ -29,7 +29,7 @@ Zeynep Kaya
 Öğrenci No: 20210101001`,
   `Hi team,
 
-Quick update — the release is on track for Tuesday, September 29, 2026.
+Quick update \u2014 the release is on track for Tuesday, September 29, 2026.
 Please review the PR before 17:00.
 
 Thanks!`,

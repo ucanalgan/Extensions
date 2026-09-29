@@ -82,7 +82,7 @@ test("each catch example is reported by its own detector only, unless another pr
 });
 
 test("low-severity signals never block on their own", () => {
-  const issues = plain(S.analyzeText("Toplantı — bence — iptal edilmeli.", S.DEFAULT_SETTINGS, { now: NOW }));
+  const issues = plain(S.analyzeText("Toplantı \u2014 bence \u2014 iptal edilmeli.", S.DEFAULT_SETTINGS, { now: NOW }));
   assert.deepEqual(issues.map((i) => [i.id, i.severity]), [["typography", "low"]]);
 });
 
