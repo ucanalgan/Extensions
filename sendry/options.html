@@ -3,66 +3,136 @@
 <head>
   <meta charset="utf-8" />
   <title>Sendry Ayarları</title>
+  <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <main>
-    <h1>Sendry</h1>
-    <p class="subtitle">Gönder'e bastığında metni tarar; AI kalıntısı bulursa gönderimi durdurur. Değişiklikler otomatik kaydedilir ve Chrome'da senkronizasyon açıksa diğer cihazlarına da taşınır.</p>
-
-    <section class="card">
-      <h2>Metni dene</h2>
-      <p class="hint">Göndermeden önce bir metni buraya yapıştırıp neyin yakalanacağını görebilirsin.</p>
-      <textarea id="test-input" rows="7" placeholder="Metni buraya yapıştır…"></textarea>
-      <div id="test-results" class="test-results"></div>
-    </section>
-
-    <section class="card">
-      <h2>Genel</h2>
-      <label class="check"><input id="opt-enabled" type="checkbox" /> Tüm sitelerde etkin</label>
-      <label class="check"><input id="opt-requireConfirm" type="checkbox" /> “Yine de gönder” için “okudum” onayı iste</label>
-      <label class="check"><input id="opt-checkPlainEnter" type="checkbox" /> Sadece Enter ile gönderimleri de kontrol et (sohbet uygulamaları için; Ctrl+Enter her zaman kontrol edilir)</label>
-    </section>
-
-    <section class="card">
-      <h2>Tespitler</h2>
-      <div id="detector-options" class="detector-options"></div>
-    </section>
-
-    <section class="card">
-      <h2>Yapıştırma takibi</h2>
-      <p class="hint">Metnin bu orandan fazlası yapıştırıldıysa, okuma süresi dolmadan “Yine de gönder” açılmaz (kelime başına ~0,25 sn).</p>
-      <div class="grid">
-        <label>Yapıştırma oranı eşiği (%)<input id="opt-pasteRatio" type="number" min="10" max="100" /></label>
-        <label>En az bekleme (sn)<input id="opt-minReadSeconds" type="number" min="0" max="120" /></label>
-        <label>En fazla bekleme (sn)<input id="opt-maxReadSeconds" type="number" min="0" max="300" /></label>
+  <div class="options">
+    <nav class="rail" aria-label="Bölümler">
+      <div class="brand">
+        <img src="icons/icon48.png" width="30" height="30" alt="" />
+        <b class="display">Sendry</b>
       </div>
-    </section>
+      <a href="#dene" class="on">Metni dene</a>
+      <a href="#tespitler">Tespitler <small id="rail-detectors"></small></a>
+      <a href="#gonderme">Gönderme</a>
+      <a href="#siteler">Siteler <small id="rail-sites"></small></a>
+      <a href="#istatistik">İstatistik</a>
+      <div class="status">
+        <span id="rail-status"></span><br />
+        Ayarlar, Chrome'da senkronizasyon açıksa diğer cihazlarına da taşınır.
+      </div>
+    </nav>
 
-    <section class="card">
-      <h2>Kendi yasaklı ifadelerin</h2>
-      <p class="hint">Her satıra bir ifade. Örn. “tam zamanlı” (sen yarı zamanlısın), eski bir öğrenci numarası, AI'ın sık kullandığı bir kalıp.</p>
-      <textarea id="opt-customPhrases" rows="4"></textarea>
-    </section>
+    <main class="content">
+      <section id="dene">
+        <h2 class="display">Metni dene</h2>
+        <p class="lead">Göndermeden önce bir metni buraya yapıştır. Sendry sorunları metnin içinde işaretler, kenara da ne olduklarını yazar.</p>
+        <div class="sheet-wrap">
+          <div class="sheet">
+            <div class="meta"><span>Taslak</span><span id="test-chars">0 karakter</span></div>
+            <div class="editor">
+              <div class="layer" id="test-layer" aria-hidden="true"></div>
+              <textarea id="test-input" spellcheck="false" placeholder="Metni buraya yapıştır…" aria-label="Denenecek metin"></textarea>
+            </div>
+          </div>
+          <aside class="margin" id="test-results" aria-live="polite"></aside>
+        </div>
+      </section>
 
-    <section class="card">
-      <h2>Ek “Gönder” buton kelimeleri</h2>
-      <p class="hint">Varsayılanlar: gönder, yanıtla, cevapla, ilet, paylaş, yayınla, send, reply, post, submit, forward. Bir sitenin butonu farklı yazıyorsa buraya ekle.</p>
-      <textarea id="opt-extraSendWords" rows="2"></textarea>
-    </section>
+      <section id="tespitler">
+        <h2 class="display">Tespitler</h2>
+        <p class="lead">Kırmızı kalemle işaretlenenler gönderimi durdurur. Sadece bilgi verenler, başka bir sorun varsa uyarı penceresinde görünür.</p>
+        <div id="detector-groups"></div>
+      </section>
 
-    <section class="card">
-      <h2>Kapalı siteler</h2>
-      <p class="hint">Her satıra bir alan adı. AI sohbet sitelerine yapıştırmak normal olduğu için varsayılan olarak kapalı.</p>
-      <textarea id="opt-disabledSites" rows="5"></textarea>
-    </section>
+      <section id="gonderme">
+        <h2 class="display">Gönderme</h2>
+        <p class="lead">Sendry'nin ne zaman devreye gireceği ve seni ne kadar bekleteceği.</p>
 
-    <section class="card">
-      <h2>Son 7 gün</h2>
-      <div id="history-chart" class="history-chart"></div>
-      <p class="legend"><span class="sw blocked"></span>durduruldu <span class="sw fixed"></span>düzeltildi <span class="sw bypassed"></span>yine de gönderildi</p>
-    </section>
-  </main>
+        <div class="group">
+          <h3>Genel</h3>
+          <div class="row">
+            <div class="name">Sendry'yi çalıştır</div>
+            <div class="desc">Kapatırsan hiçbir sitede gönderim kontrol edilmez. Tek bir siteyi kapatmak için Siteler bölümünü kullan.</div>
+            <div class="ctl"><label class="switch"><input type="checkbox" id="opt-enabled" aria-label="Sendry'yi çalıştır" /><span></span></label></div>
+          </div>
+          <div class="row">
+            <div class="name">"Yine de gönder" için okuduğunu onaylat</div>
+            <div class="desc">Uyarı penceresinde "Metni baştan sona okudum" kutusu işaretlenmeden gönderim açılmaz.</div>
+            <div class="ctl"><label class="switch"><input type="checkbox" id="opt-requireConfirm" aria-label="Okuma onayı" /><span></span></label></div>
+          </div>
+          <div class="row">
+            <div class="name">Sadece Enter ile gönderimleri de kontrol et</div>
+            <div class="desc">WhatsApp Web gibi sohbet uygulamaları için. Ctrl+Enter her zaman kontrol edilir.</div>
+            <div class="ctl"><label class="switch"><input type="checkbox" id="opt-checkPlainEnter" aria-label="Enter kontrolü" /><span></span></label></div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Yapıştırma</h3>
+          <div class="row">
+            <div class="name">Hızlı yapıştır-gönder</div>
+            <div class="desc">Metnin büyük kısmı yapıştırıldıysa, okumaya yetecek süre dolmadan "Yine de gönder" açılmaz.</div>
+            <div class="ctl"><label class="switch"><input type="checkbox" id="opt-paste" aria-label="Hızlı yapıştır-gönder" /><span></span></label></div>
+          </div>
+          <div class="row">
+            <div class="name">Yapıştırılmış sayılma eşiği</div>
+            <div class="desc">Metnin bu oranından fazlası yapıştırıldıysa bekleme süresi uygulanır.</div>
+            <div class="ctl"><span class="unit">%</span><input class="num" id="opt-pasteRatio" type="number" min="10" max="100" aria-label="Eşik yüzdesi" /></div>
+          </div>
+          <div class="row">
+            <div class="name">Bekleme süresi</div>
+            <div class="desc">Kelime başına yaklaşık çeyrek saniye; bu iki sınırın arasında kalır.</div>
+            <div class="ctl">
+              <input class="num" id="opt-minReadSeconds" type="number" min="0" max="120" aria-label="En az saniye" />
+              <span class="unit">ile</span>
+              <input class="num" id="opt-maxReadSeconds" type="number" min="0" max="300" aria-label="En fazla saniye" />
+              <span class="unit">sn</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Kendi yasaklı ifadelerin</h3>
+          <div class="row wide">
+            <div class="desc">Her satıra bir ifade. Sana özel hatalar için: yanlış çalışma şeklin, eski bir numaran, AI'ın sık kullandığı bir kalıp.</div>
+            <textarea class="list" id="opt-customPhrases" aria-label="Yasaklı ifadeler"></textarea>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3>Gönder butonları</h3>
+          <div class="row wide">
+            <div class="desc">Sendry "Gönder", "Yanıtla", "Send", "Reply", "Post", "Comment" gibi butonları tanır. Bir sitenin butonu farklı yazıyorsa buraya ekle, her satıra bir kelime.</div>
+            <textarea class="list short" id="opt-extraSendWords" aria-label="Ek gönder kelimeleri"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section id="siteler">
+        <h2 class="display">Siteler</h2>
+        <p class="lead">Sendry bu sitelerde çalışmaz. AI sohbet sitelerine metin yapıştırmak normal olduğu için varsayılan olarak listede.</p>
+        <div class="sites" id="sites"></div>
+        <form class="add" id="add-site">
+          <input id="site-input" placeholder="alan adı, örn. slack.com" aria-label="Site ekle" />
+          <button class="btn quiet" type="submit">Ekle</button>
+        </form>
+      </section>
+
+      <section id="istatistik">
+        <h2 class="display">İstatistik</h2>
+        <p class="lead">Son yedi günde durdurulan gönderimler ve sonrasında ne yaptığın. Bu bilgiler sadece bu bilgisayarda tutulur.</p>
+        <div class="week" id="week"></div>
+        <p class="empty" id="week-empty" hidden>Son yedi günde durdurulan bir gönderim yok.</p>
+        <div class="legend">
+          <span><i class="i-fixed"></i>Düzeltip gönderdin</span>
+          <span><i class="i-bypass"></i>Yine de gönderdin</span>
+          <span><i class="i-open"></i>Vazgeçtin</span>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="common.js"></script>
   <script src="options.js"></script>

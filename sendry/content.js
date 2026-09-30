@@ -13,82 +13,124 @@
   // either way), and an open one lets accessibility tools and the e2e tests reach the modal.
   const SHADOW_MODE = "open";
 
+  // Same tokens as theme.css (the modal lives in the page's shadow DOM and can't load that file).
   const MODAL_CSS = `
     :host { all: initial; }
-    .backdrop {
-      --bg: #ffffff; --fg: #1f2430; --muted: #6b7280; --border: #e5e7eb; --card: #f9fafb;
-      --accent: #d97706; --accent-fg: #ffffff; --high: #dc2626; --medium: #d97706; --low: #6b7280;
-      --mark: #fde68a; --mark-fg: #1f2430;
+    .scrim {
+      --paper: #f3f6f5; --sheet: #ffffff; --ink: #14201e; --ink-2: #4a5a57; --ink-3: #7a8986;
+      --rule: #dbe3e1; --teal: #0b7a6f; --marker: #fde68a; --marker-ink: #3d3000;
+      --proof: #c0392b; --proof-2: #b7791f;
+      --display: "Sendry Literata", Georgia, "Times New Roman", serif;
+      --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
       position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: rgba(15, 17, 23, 0.55); padding: 16px; box-sizing: border-box;
-      font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.45;
+      background: rgba(20, 32, 30, 0.42); padding: 16px; box-sizing: border-box;
+      font: 14px/1.5 var(--body); color: var(--ink); color-scheme: light;
     }
     @media (prefers-color-scheme: dark) {
-      .backdrop {
-        --bg: #17181d; --fg: #e5e7eb; --muted: #9ca3af; --border: #33353d; --card: #1f2127;
-        --high: #f87171; --medium: #fbbf24; --mark: #78350f; --mark-fg: #fde68a;
+      .scrim {
+        --paper: #101715; --sheet: #172120; --ink: #e2ebe9; --ink-2: #a2b2ae; --ink-3: #72817e;
+        --rule: #25302e; --teal: #3dd6c3; --marker: rgba(250, 204, 21, 0.26); --marker-ink: #fde68a;
+        --proof: #f47a6c; --proof-2: #f5b942;
+        background: rgba(0, 0, 0, 0.55); color-scheme: dark;
       }
     }
     * { box-sizing: border-box; }
     .dialog {
-      width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto;
-      background: var(--bg); color: var(--fg); border-radius: 12px; border: 1px solid var(--border);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35); padding: 20px 22px;
+      width: 100%; max-width: 500px; max-height: calc(100vh - 32px); overflow-y: auto;
+      background: var(--sheet); color: var(--ink); border-radius: 10px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
     }
-    .badge {
-      display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
-      color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px;
-    }
-    h2 { font-size: 17px; margin: 8px 0 2px; }
-    .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
-    .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-    .issue { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-    .issue-head { display: flex; align-items: center; gap: 8px; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-    .high .dot { background: var(--high); }
-    .medium .dot { background: var(--medium); }
-    .low .dot { background: var(--low); }
-    .issue-head strong { margin-right: auto; }
-    .count { color: var(--muted); font-size: 12px; }
+    header { padding: 18px 22px 12px; display: flex; gap: 12px; align-items: flex-start; }
+    header svg { flex: none; }
+    h2 { font-family: var(--display); font-weight: 600; font-size: 19px; letter-spacing: -0.01em; margin: 0; }
+    .sub { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+    .issues { list-style: none; margin: 0; padding: 0 22px; }
+    .issue { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 3px 8px; padding: 11px 0; border-top: 1px solid var(--rule); }
+    .mk { font-family: var(--display); font-size: 18px; line-height: 1.1; text-align: center; color: var(--proof); grid-row: span 3; }
+    .medium .mk { color: var(--proof-2); }
+    .low .mk { color: var(--ink-3); }
+    .issue strong { font-weight: 600; }
+    .count { color: var(--ink-3); font-weight: 400; }
     button.fix {
-      all: unset; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent);
-      border: 1px solid var(--accent); border-radius: 6px; padding: 2px 8px; white-space: nowrap;
+      all: unset; cursor: pointer; grid-column: 3; grid-row: 1; align-self: start;
+      color: var(--teal); font-size: 13px; font-weight: 600; white-space: nowrap;
     }
-    button.fix:hover { background: var(--accent); color: var(--accent-fg); }
-    .detail { margin: 4px 0 0 16px; color: var(--muted); font-size: 13px; }
-    .snippets { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 0 16px; }
+    button.fix:hover { text-decoration: underline; }
+    button.fix .pm { font-family: var(--display); margin-right: 4px; }
+    .detail { grid-column: 2 / span 2; margin: 0; color: var(--ink-2); font-size: 13px; }
+    .snippets { grid-column: 2 / span 2; display: flex; flex-direction: column; gap: 4px; margin-top: 3px; }
     .snippet {
-      all: unset; cursor: pointer; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
-      background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px 8px; word-break: break-word;
+      all: unset; cursor: pointer; font-family: var(--mono); font-size: 12px; color: var(--ink-2);
+      background: var(--paper); border: 1px solid transparent; border-radius: 4px; padding: 5px 8px;
+      overflow-wrap: anywhere;
     }
-    .snippet:hover, .snippet:focus-visible { border-color: var(--accent); }
-    .note { color: var(--muted); font-size: 12px; margin: -2px 0 2px 8px; }
-    mark { background: var(--mark); color: var(--mark-fg); border-radius: 3px; padding: 0 2px; }
-    .confirm { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0 4px; font-size: 13px; cursor: pointer; }
+    .snippet:hover, .snippet:focus-visible { border-color: var(--teal); }
+    .note { color: var(--ink-3); font-size: 12px; margin: -1px 0 2px 8px; }
+    mark { background: var(--marker); color: var(--marker-ink); border-radius: 2px; padding: 0 2px; }
+    footer {
+      position: sticky; bottom: 0;
+      padding: 14px 22px 18px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px;
+      background: color-mix(in srgb, var(--paper) 60%, var(--sheet));
+    }
+    .confirm { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--ink-2); cursor: pointer; }
     .confirm[hidden] { display: none; }
-    .confirm input { margin-top: 2px; accent-color: var(--accent); }
-    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .confirm input { margin-top: 3px; accent-color: var(--teal); }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
     button.primary, button.ghost {
       all: unset; cursor: pointer; border-radius: 6px; padding: 7px 14px; font-size: 13px; font-weight: 600;
     }
-    button.primary { background: var(--accent); color: var(--accent-fg); }
-    button.ghost { color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+    button.primary { background: var(--teal); color: var(--sheet); }
+    button.ghost { color: var(--ink-2); border: 1px solid var(--rule); font-weight: 500; }
+    button.ghost:hover { border-color: var(--ink-3); }
     button.ghost:disabled { opacity: 0.5; cursor: not-allowed; }
-    button.fix-all { color: var(--accent); border-color: var(--accent); }
-    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
   `;
 
   const TOAST_CSS = `
     .toast {
-      font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 13px;
-      background: #1f2430; color: #ffffff; border-radius: 8px; padding: 10px 16px;
+      font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #14201e; color: #f3f6f5; border-radius: 8px; padding: 10px 16px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); max-width: min(90vw, 480px);
+      display: flex; gap: 10px; align-items: baseline;
     }
+    .toast b { font-family: "Sendry Literata", Georgia, serif; color: #3dd6c3; }
     @media (prefers-color-scheme: dark) {
-      .toast { background: #e5e7eb; color: #17181d; }
+      .toast { background: #e2ebe9; color: #14201e; }
+      .toast b { color: #0b7a6f; }
     }
   `;
+
+  // The extension icon, inline so page CSPs that block extension images can't hide it.
+  const ICON_SVG =
+    '<svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true">' +
+    '<rect width="64" height="64" rx="14" fill="#0d9488"/>' +
+    '<path d="M11 33 L54 13 L32 57 L27 37 Z" fill="#fff"/><path d="M27 37 L54 13 L32 57 Z" fill="#ccfbf1"/>' +
+    '<circle cx="46" cy="46" r="12" fill="#0d9488"/><circle cx="46" cy="46" r="10" fill="#facc15"/>' +
+    '<path d="M41 46 l3.5 3.5 l6.5 -7" stroke="#0d9488" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+    "</svg>";
+
+  const FONT_FILES = [
+    ["literata-600-latin.woff2", "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212, U+FEFF"],
+    ["literata-600-latin-ext.woff2", "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20C0, U+A720-A7FF"]
+  ];
+  let fontRequested = false;
+
+  // Headings use the bundled Literata under a Sendry-only family name, so the page's own fonts are
+  // untouched. If the page refuses to load it, the modal falls back to Georgia.
+  function ensureFont() {
+    if (fontRequested || !extensionAlive()) return;
+    fontRequested = true;
+    try {
+      for (const [file, range] of FONT_FILES) {
+        const face = new FontFace("Sendry Literata", `url("${chrome.runtime.getURL(`fonts/${file}`)}")`, { weight: "600", unicodeRange: range });
+        document.fonts.add(face);
+        face.load().catch(() => {});
+      }
+    } catch {
+      // FontFace unavailable or blocked; the serif fallback is fine
+    }
+  }
 
   const TEXT_INPUT_TYPES = new Set(["", "text"]);
   const TRIGGER_SELECTOR = 'button, input[type="submit"], input[type="button"], input[type="image"], [role="button"], a';
@@ -538,6 +580,7 @@
         detail: i.detail,
         count: i.count,
         fixable: fixable.includes(i.id),
+        mark: (DETECTOR_INFO[i.id] && DETECTOR_INFO[i.id].mark) || "!",
         hits: i.hits.slice(0, 3).map(snippetParts)
       }))
     };
@@ -796,20 +839,26 @@
   }
 
   function showToast(message) {
+    ensureFont();
     const host = document.createElement("sendry-toast");
     host.style.cssText = "all: initial; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 2147483647;";
     const root = host.attachShadow({ mode: SHADOW_MODE });
     const style = el("style");
     style.textContent = TOAST_CSS;
-    root.append(style, el("div", "toast", message));
+    const toast = el("div", "toast");
+    toast.append(el("b", null, "Sendry"), el("span", null, message));
+    root.append(style, toast);
     document.documentElement.appendChild(host);
     setTimeout(() => host.remove(), 5000);
   }
+
+  const COUNT_WORDS = ["", "bir", "iki", "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz"];
 
   // Renders a view (plain data) and reports the user's choice as an action; it never touches the
   // page's fields itself, so the same modal works for this frame or for a child frame.
   function showModal(view, onAction) {
     closeModal();
+    ensureFont();
     const host = document.createElement("sendry-modal");
     host.style.cssText = "all: initial; position: fixed; inset: 0; z-index: 2147483647;";
     const root = host.attachShadow({ mode: SHADOW_MODE });
@@ -821,33 +870,36 @@
 
     const style = el("style");
     style.textContent = MODAL_CSS;
-    const backdrop = el("div", "backdrop");
+    const scrim = el("div", "scrim");
     const dialog = el("div", "dialog");
     dialog.setAttribute("role", "alertdialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", "sendry-title");
 
-    const header = el("div", "header");
-    const title = el("h2", null, "Göndermeden önce bir bak");
-    title.id = "sendry-title";
     const blocking = view.issues.filter((i) => i.severity !== "low").length;
-    header.append(el("span", "badge", "Sendry"), title,
-      el("p", "sub", `Bu mesajda ${blocking} sorun buldum. Karşı tarafa bu haliyle gidecek.`));
+    const header = el("header");
+    header.innerHTML = ICON_SVG;
+    const heading = el("div");
+    const title = el("h2", null, `Göndermeden önce ${COUNT_WORDS[blocking] || blocking} şeye bak`);
+    title.id = "sendry-title";
+    heading.append(title, el("p", "sub", "Mesaj şu haliyle karşı tarafa gidecek."));
+    header.append(heading);
 
     const list = el("ul", "issues");
     view.issues.forEach((issue, issueIndex) => {
       const li = el("li", `issue ${issue.severity}`);
-      const head = el("div", "issue-head");
-      head.append(el("span", "dot"), el("strong", null, issue.title));
-      if (issue.count > 1) head.append(el("span", "count", `×${issue.count}`));
+      const heading = el("strong", null, issue.title);
+      li.append(el("span", "mk", issue.mark), el("div"));
+      li.lastChild.append(heading);
+      if (issue.count > 1) li.lastChild.append(el("span", "count", ` (${issue.count})`));
       if (issue.fixable) {
-        const btn = el("button", "fix", FIX_LABELS[issue.id]);
+        const btn = el("button", "fix");
         btn.type = "button";
-        btn.title = "Tek tıkla düzelt";
+        btn.append(el("span", "pm", issue.mark), FIX_LABELS[issue.id]);
         btn.addEventListener("click", () => act({ kind: "fix", ids: [issue.id] }));
-        head.append(btn);
+        li.append(btn);
       }
-      li.append(head, el("p", "detail", issue.detail));
+      li.append(el("p", "detail", issue.detail));
       if (issue.hits.length > 0) {
         const snippets = el("div", "snippets");
         issue.hits.forEach((parts, hitIndex) => {
@@ -865,14 +917,15 @@
       list.append(li);
     });
 
+    const footer = el("footer");
     const confirmRow = el("label", "confirm");
     const checkbox = el("input");
     checkbox.type = "checkbox";
-    confirmRow.append(checkbox, el("span", null, "Metni baştan sona okudum; isim, tarih, saat ve bilgiler doğru."));
+    confirmRow.append(checkbox, el("span", null, "Metni baştan sona okudum. İsimler, tarihler ve saatler doğru."));
     if (!view.requireConfirm) confirmRow.hidden = true;
 
     const actions = el("div", "actions");
-    const sendBtn = el("button", "ghost");
+    const sendBtn = el("button", "ghost send");
     sendBtn.type = "button";
     const editBtn = el("button", "primary", "Düzenlemeye dön");
     editBtn.type = "button";
@@ -884,16 +937,17 @@
       actions.append(fixAllBtn);
     }
     actions.append(editBtn);
+    footer.append(confirmRow, actions);
 
-    dialog.append(header, list, confirmRow, actions);
-    backdrop.append(dialog);
-    root.append(style, backdrop);
+    dialog.append(header, list, footer);
+    scrim.append(dialog);
+    root.append(style, scrim);
 
     let remaining = view.cooldown;
     const refresh = () => {
       const ready = remaining <= 0 && (!view.requireConfirm || checkbox.checked);
       sendBtn.disabled = !ready;
-      sendBtn.textContent = remaining > 0 ? `Yine de gönder (${remaining} sn)` : "Yine de gönder";
+      sendBtn.textContent = remaining > 0 ? `Yine de gönder · ${remaining} sn` : "Yine de gönder";
     };
     const timer = setInterval(() => {
       remaining -= 1;
@@ -907,8 +961,8 @@
     sendBtn.addEventListener("click", () => {
       if (!sendBtn.disabled) act({ kind: "send" });
     });
-    backdrop.addEventListener("click", (e) => {
-      if (e.target === backdrop) editBtn.click();
+    scrim.addEventListener("click", (e) => {
+      if (e.target === scrim) editBtn.click();
     });
     host.addEventListener("keydown", (e) => {
       e.stopPropagation();
@@ -917,7 +971,8 @@
 
     document.documentElement.appendChild(host);
     modal = { host, timer };
-    editBtn.focus();
+    // Without preventScroll a long list would open scrolled to the buttons, hiding the heading.
+    editBtn.focus({ preventScroll: true });
   }
 
   function closeModal() {

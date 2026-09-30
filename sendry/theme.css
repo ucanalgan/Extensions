@@ -1,0 +1,116 @@
+/* Sendry design tokens and shared controls, used by the options page and the popup.
+   The warning modal lives in the page's shadow DOM and can't load this file, so content.js
+   repeats the same values in MODAL_CSS; keep the two in step. */
+
+@font-face {
+  font-family: "Literata";
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/literata-600-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Literata";
+  font-weight: 600;
+  font-display: swap;
+  src: url("fonts/literata-600-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* A proofreader's desk: quiet rows on tinted paper, one white sheet where text gets marked up.
+   Teal and yellow come from the icon: teal for "on" and main actions, yellow only for highlighting
+   problems in text. Red and amber are the proofreader's pens for blocking and minor issues. */
+:root {
+  --paper: #f3f6f5;
+  --sheet: #ffffff;
+  --ink: #14201e;
+  --ink-2: #4a5a57;
+  --ink-3: #7a8986;
+  --rule: #dbe3e1;
+  --teal: #0b7a6f;
+  --teal-soft: #d6eeea;
+  --marker: #fde68a;
+  --marker-ink: #3d3000;
+  --proof: #c0392b;
+  --proof-2: #b7791f;
+  --shadow: 0 1px 2px rgba(20, 32, 30, 0.06), 0 8px 24px rgba(20, 32, 30, 0.06);
+  --display: "Literata", Georgia, "Times New Roman", serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #101715;
+    --sheet: #172120;
+    --ink: #e2ebe9;
+    --ink-2: #a2b2ae;
+    --ink-3: #72817e;
+    --rule: #25302e;
+    --teal: #3dd6c3;
+    --teal-soft: #123733;
+    --marker: rgba(250, 204, 21, 0.26);
+    --marker-ink: #fde68a;
+    --proof: #f47a6c;
+    --proof-2: #f5b942;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.25);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 14px/1.5 var(--body);
+}
+
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+.display { font-family: var(--display); font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---------- buttons ---------- */
+.btn {
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.btn.primary { background: var(--teal); color: var(--sheet); }
+.btn.quiet { background: none; border: 1px solid var(--rule); color: var(--ink-2); font-weight: 500; }
+.btn.quiet:hover { border-color: var(--ink-3); }
+.btn.link { background: none; padding: 0; color: var(--teal); font-weight: 600; }
+.btn.link:hover { text-decoration: underline; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- switch ---------- */
+.switch { position: relative; display: inline-block; width: 36px; height: 20px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.switch span {
+  position: absolute; inset: 0; border-radius: 999px; background: var(--rule);
+  transition: background 0.15s; pointer-events: none;
+}
+.switch span::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--sheet); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); transition: transform 0.15s;
+}
+.switch input:checked + span { background: var(--teal); }
+.switch input:checked + span::after { transform: translateX(16px); }
+.switch input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* ---------- proofreading marks ---------- */
+.mk { font-family: var(--display); line-height: 1.1; text-align: center; color: var(--proof); }
+.mk.medium { color: var(--proof-2); }
+.mk.low { color: var(--ink-3); }
+
+mark.hl { background: var(--marker); color: var(--marker-ink); border-radius: 2px; padding: 0 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

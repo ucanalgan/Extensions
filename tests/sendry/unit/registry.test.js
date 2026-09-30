@@ -42,6 +42,15 @@ test("detectors marked fixable have a fix, and every fix belongs to a fixable de
   assert.deepEqual(plain(S.FIX_ORDER).sort(), fixable);
 });
 
+test("every detector has a proofreading mark and a place on the options page", () => {
+  const groups = new Set(S.DETECTOR_GROUPS.map((g) => g.id));
+  for (const d of S.DETECTORS) {
+    assert.ok(d.mark, `${d.id} has no mark`);
+    // "paste" is configured under Gönderme, not in the detector groups
+    if (d.id !== "paste") assert.ok(groups.has(d.group), `${d.id} is in unknown group ${d.group}`);
+  }
+});
+
 test("every detector has a default setting and an entry for the options page", () => {
   for (const d of S.DETECTORS) {
     assert.equal(S.DEFAULT_SETTINGS.detectors[d.id], true, d.id);

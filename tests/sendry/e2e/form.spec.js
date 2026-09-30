@@ -13,7 +13,7 @@ test("the email that was actually sent is stopped before it leaves", async ({ pa
 
   await expect(sendry.modal).toBeVisible();
   expect(await sendry.issueTitles()).toEqual([
-    "Başlık satırı mesajın içinde",
+    "Konu satırı mesajın içinde",
     "Doldurulmamış yer tutucu",
     "Yapışık kelimeler",
     "Paragraflar kaybolmuş"
@@ -79,7 +79,7 @@ test("a fresh paste has to be read before 'send anyway' unlocks", async ({ page,
 
   expect(await sendry.issueTitles()).toContainEqual(expect.stringMatching(/^Yapıştırdıktan \d+ sn sonra gönderiyorsun$/));
   await sendry.modal.locator(".confirm input").check();
-  await expect(sendry.modal.locator("button.ghost", { hasText: /Yine de gönder \(\d+ sn\)/ })).toBeDisabled();
+  await expect(sendry.modal.locator("button.ghost", { hasText: /Yine de gönder · \d+ sn/ })).toBeDisabled();
 });
 
 test("Gmail style: Ctrl+Enter is caught, and clicking a snippet selects it in the editor", async ({ page, sendry }) => {

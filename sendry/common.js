@@ -318,6 +318,9 @@ function detectCustom({ folded, settings }) {
 //   severity  "high" | "medium" block the send; "low" is shown only when something else blocks.
 //   bodyOnly  skipped for single-line inputs such as a subject field.
 //   covers    ids whose hits inside this detector's hits are dropped, so one problem shows once.
+//   group     where the options page lists it (see DETECTOR_GROUPS).
+//   mark      the proofreader's mark shown next to it: ꝺ delete, # add space, ¶ new paragraph,
+//             ? fill in, ! check the fact.
 
 var FLAT_EXAMPLE =
   "Sayın Hocam, bu dönem yarı zamanlı çalıştığım için salı günleri derse katılamayacağım. " +
@@ -329,6 +332,8 @@ var FLAT_EXAMPLE =
 var DETECTORS = [
   {
     id: "aiArtifact",
+    group: "ai",
+    mark: "ꝺ",
     label: "AI kaynak kalıntıları",
     desc: "ChatGPT/Gemini'nin metne gömdüğü kaynak işaretleri ve takip parametreleri.",
     why: "Karşı tarafta anlamsız kod parçaları olarak görünür ve metnin doğrudan AI'dan kopyalandığını ele verir.",
@@ -350,11 +355,13 @@ var DETECTORS = [
   },
   {
     id: "header",
-    label: "Başlık satırı gövdede",
-    desc: "“Subject:”, “Konu:”, “Kime:” gibi satırlar mesajın içine yapışmış.",
+    group: "format",
+    mark: "ꝺ",
+    label: "Konu satırı mesajın içinde",
+    desc: "\"Subject:\", \"Konu:\", \"Kime:\" gibi satırlar mesajın içine yapışmış.",
     why: "AI e-postayı konu satırıyla birlikte yazar; hepsini kopyalayınca konu, mesajın ilk satırı olarak gider.",
-    title: "Başlık satırı mesajın içinde",
-    detail: "“Subject:/Konu:” gibi satırlar AI çıktısından gövdeye taşınmış. Konu ayrı alana yazılmalı.",
+    title: "Konu satırı mesajın içinde",
+    detail: "\"Subject:/Konu:\" gibi satırlar AI çıktısından gövdeye taşınmış. Konu ayrı alana yazılmalı.",
     severity: "high",
     bodyOnly: true,
     fixable: true,
@@ -366,8 +373,10 @@ var DETECTORS = [
   },
   {
     id: "placeholder",
+    group: "facts",
+    mark: "?",
     label: "Doldurulmamış yer tutucu",
-    desc: "[saat aralığı], {isim}, <Adınız>, XX:XX, “Sayın ,” gibi AI'ın senin doldurman için bıraktığı boşluklar.",
+    desc: "[saat aralığı], {isim}, <Adınız>, XX:XX, \"Sayın ,\" gibi AI'ın senin doldurman için bıraktığı boşluklar.",
     why: "AI bilmediği bilgiyi uydurmak yerine boşluk bırakır; doldurulmazsa mesaj yarım görünür.",
     title: "Doldurulmamış yer tutucu",
     detail: "AI'ın senin doldurman için bıraktığı boşluklar olduğu gibi duruyor.",
@@ -395,8 +404,10 @@ var DETECTORS = [
   },
   {
     id: "aiPhrase",
+    group: "ai",
+    mark: "ꝺ",
     label: "AI sohbet kalıbı",
-    desc: "“İşte e-postanız:”, “Umarım yardımcı olur”, “Here's a draft” gibi AI'ın sana söylediği cümleler.",
+    desc: "\"İşte e-postanız:\", \"Umarım yardımcı olur\", \"Here's a draft\" gibi AI'ın sana söylediği cümleler.",
     why: "Bu cümleler AI'ın sana yazdığı kısımdır; karşı tarafa gidince mesajın AI'dan kopyalandığı anlaşılır.",
     title: "AI'ın sana yazdığı cümleler",
     detail: "Bu ifadeler karşı tarafa değil, AI'dan sana hitap ediyor.",
@@ -415,8 +426,10 @@ var DETECTORS = [
   },
   {
     id: "versions",
+    group: "ai",
+    mark: "ꝺ",
     label: "Birden fazla versiyon",
-    desc: "“Seçenek 1:”, “Versiyon 2:”, “Daha resmi versiyon:” gibi AI'ın sunduğu alternatiflerin hepsi yapıştırılmış.",
+    desc: "\"Seçenek 1:\", \"Versiyon 2:\", \"Daha resmi versiyon:\" gibi AI'ın sunduğu alternatiflerin hepsi yapıştırılmış.",
     why: "AI birkaç alternatif yazdığında hepsini kopyalamak kolaydır; karşı taraf aynı mesajın iki halini okur.",
     title: "Birden fazla versiyon yapıştırılmış",
     detail: "AI'ın sunduğu alternatiflerin başlıkları metinde; büyük ihtimalle birden fazla versiyon kopyalandı.",
@@ -430,8 +443,10 @@ var DETECTORS = [
   },
   {
     id: "aiNote",
+    group: "ai",
+    mark: "ꝺ",
     label: "AI'ın sana notu",
-    desc: "“Not: Tarihleri kendine göre düzenleyebilirsin.” gibi AI'ın metnin sonuna eklediği açıklamalar.",
+    desc: "\"Not: Tarihleri kendine göre düzenleyebilirsin.\" gibi AI'ın metnin sonuna eklediği açıklamalar.",
     why: "AI çoğu zaman çıktının altına sana yönelik bir not ekler; bu not mesajın parçası değildir.",
     title: "AI'ın sana bıraktığı not",
     detail: "Bu not karşı tarafa değil sana yazılmış; mesajdan çıkarılmalı.",
@@ -446,8 +461,10 @@ var DETECTORS = [
   },
   {
     id: "duplicate",
+    group: "ai",
+    mark: "ꝺ",
     label: "Tekrarlanan metin",
-    desc: "Aynı cümle iki kez, iki “Saygılarımla” ya da iki “Sayın …” satırı.",
+    desc: "Aynı cümle iki kez, iki \"Saygılarımla\" ya da iki \"Sayın …\" satırı.",
     why: "Metin iki kez yapıştırıldığında ya da iki versiyon birleştiğinde olur.",
     title: "Metin tekrar ediyor",
     detail: "Aynı cümle veya selamlama/kapanış birden fazla kez geçiyor; metin iki kez yapıştırılmış olabilir.",
@@ -464,8 +481,10 @@ var DETECTORS = [
   },
   {
     id: "dateMismatch",
+    group: "facts",
+    mark: "!",
     label: "Tarih-gün uyuşmazlığı",
-    desc: "“29 Eylül 2026 Pazartesi” gibi tarihin haftanın gününe uymaması ya da “31 Şubat” gibi olmayan tarihler.",
+    desc: "\"29 Eylül 2026 Pazartesi\" gibi tarihin haftanın gününe uymaması ya da \"31 Şubat\" gibi olmayan tarihler.",
     why: "AI tarihlerin hangi güne denk geldiğini sık sık yanlış hesaplar; yanlış gün toplantıyı kaçırtır.",
     title: "Tarih ile gün uyuşmuyor",
     detail: (hits) => hits[0].note,
@@ -478,8 +497,10 @@ var DETECTORS = [
   },
   {
     id: "timeRange",
+    group: "facts",
+    mark: "!",
     label: "Hatalı saat",
-    desc: "“17.00-14.00” gibi ters aralıklar ya da “25:00” gibi olmayan saatler.",
+    desc: "\"17.00-14.00\" gibi ters aralıklar ya da \"25:00\" gibi olmayan saatler.",
     why: "AI saat aralıklarını karıştırabilir; hatalı saat karşı tarafı yanlış zamana yönlendirir.",
     title: "Saat hatalı görünüyor",
     detail: (hits) => hits[0].note,
@@ -492,6 +513,8 @@ var DETECTORS = [
   },
   {
     id: "markdown",
+    group: "format",
+    mark: "ꝺ",
     label: "Markdown işaretleri",
     desc: "**kalın**, ## başlık, ```kod```, [link](url), tablolar gibi e-postada ham görünen işaretler.",
     why: "AI sohbet ekranında biçimli görünen metin, e-postaya yapıştırınca yıldız ve diyez işaretleriyle görünür.",
@@ -514,6 +537,8 @@ var DETECTORS = [
   },
   {
     id: "emojiBullets",
+    group: "format",
+    mark: "ꝺ",
     label: "Emoji madde işaretleri",
     desc: "✅ 📌 🔹 gibi emojilerle başlayan satırlar.",
     why: "AI listeleri emojilerle süsler; resmi bir e-postada yapay görünür.",
@@ -529,8 +554,10 @@ var DETECTORS = [
   },
   {
     id: "glued",
+    group: "format",
+    mark: "#",
     label: "Yapışık kelimeler",
-    desc: "“ederim.Saygılarımla”, “HakkındaSayın” gibi satır sonu kaybolunca birleşen kelimeler.",
+    desc: "\"ederim.Saygılarımla\", \"HakkındaSayın\" gibi satır sonu kaybolunca birleşen kelimeler.",
     why: "Biçimli metin düz metin kutusuna yapıştırılınca satır sonları kaybolur ve cümleler birleşir.",
     title: "Yapışık kelimeler",
     detail: "Satır sonları kaybolunca cümleler ve kelimeler birbirine yapışmış.",
@@ -545,6 +572,8 @@ var DETECTORS = [
   },
   {
     id: "flattened",
+    group: "format",
+    mark: "¶",
     label: "Paragraflar kaybolmuş",
     desc: "Selamlama/kapanış içeren uzun metin hiç satır sonu olmadan tek blok halinde.",
     why: "Karşı taraf selamlama, gövde ve imzayı ayırt edemediği tek bir paragraf görür.",
@@ -561,6 +590,8 @@ var DETECTORS = [
   },
   {
     id: "invisible",
+    group: "format",
+    mark: "ꝺ",
     label: "Gizli karakterler",
     desc: "Sıfır genişlikli boşluk gibi görünmeyen ama metinde duran karakterler.",
     why: "Kopyalanan metinlerde kalır; arama, kopyalama ve bazı sistemlerde metnin bozulmasına yol açabilir.",
@@ -576,6 +607,8 @@ var DETECTORS = [
   },
   {
     id: "typography",
+    group: "ai",
+    mark: "·",
     label: "AI yazım izleri",
     desc: "Türkçe klavyeyle neredeyse hiç yazılmayan uzun tire karakterinin sık kullanımı.",
     why: "Tek başına sorun değildir, ama metnin kopyalandığına işaret eder. Sadece başka bir sorun varsa gösterilir.",
@@ -590,9 +623,11 @@ var DETECTORS = [
   },
   {
     id: "custom",
+    group: "facts",
+    mark: "!",
     label: "Kendi eklediğin ifadeler",
     desc: "Ayarlarda yasakladığın kelime ve ifadeler.",
-    why: "Sana özel hataları (örneğin “tam zamanlı”) yakalamak için.",
+    why: "Sana özel hataları (örneğin \"tam zamanlı\") yakalamak için.",
     title: "Yasakladığın ifade",
     detail: "Ayarlarda eklediğin bir ifade metinde geçiyor.",
     severity: "high",
@@ -601,10 +636,18 @@ var DETECTORS = [
   {
     // Handled in content.js: it needs the paste history of the live text field.
     id: "paste",
+    group: "send",
+    mark: "⏱",
     label: "Hızlı yapıştır-gönder",
     desc: "Metnin çoğu yapıştırılmış ve okumaya yetecek süre geçmeden gönderiliyor.",
     why: "Asıl hataların çoğu, yapıştırılan metin hiç okunmadan gönderildiğinde olur."
   }
+];
+
+var DETECTOR_GROUPS = [
+  { id: "ai", label: "AI'dan kalanlar" },
+  { id: "format", label: "Biçim bozulmaları" },
+  { id: "facts", label: "Bilgi hataları" }
 ];
 
 var DETECTOR_INFO = Object.fromEntries(DETECTORS.map((d) => [d.id, d]));
@@ -714,7 +757,7 @@ function analyzeText(text, settings, opts = {}) {
       title: d.title,
       detail: typeof d.detail === "function" ? d.detail(hits) : d.detail,
       count: hits.length,
-      hits: hits.slice(0, 5).map((h) => ({ ...h, text: text.slice(h.index, h.index + h.length) }))
+      hits: hits.slice(0, opts.maxHits || 5).map((h) => ({ ...h, text: text.slice(h.index, h.index + h.length) }))
     });
   }
   // Array sort is stable, so within a severity the registry order is kept.
@@ -729,7 +772,7 @@ var FIX_LABELS = {
   header: "Satırı sil",
   markdown: "İşaretleri temizle",
   glued: "Ayır",
-  flattened: "Paragrafları ayır"
+  flattened: "Paragraflara ayır"
 };
 // Artifacts and invisible characters go first because they can sit inside words the later fixes
 // look at; markdown before header so "**Konu:** …" becomes a plain header line the header fix removes.

@@ -20,7 +20,7 @@ test("options page: the test box finds issues and auto-fix cleans them", async (
   await page.goto(`chrome-extension://${extensionId}/options.html`);
   await page.fill("#test-input", "**Konu:** Test\nMerhaba,\nYarın uygunum.Teşekkürler");
 
-  await expect(page.locator(".result strong")).toHaveText(["Yapışık kelimeler", "Markdown işaretleri"]);
+  await expect(page.locator("#test-results .note b")).toHaveText(["Markdown işaretleri", "Yapışık kelimeler"]);
   await page.click(".fix-btn");
   await expect(page.locator("#test-input")).toHaveValue("Merhaba,\nYarın uygunum. Teşekkürler");
   await expect(page.locator(".clean")).toBeVisible();

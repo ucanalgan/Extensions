@@ -3,38 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <title>Sendry</title>
+  <link rel="stylesheet" href="theme.css" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <header>
-    <h1>Sendry</h1>
+  <div class="top">
+    <img src="icons/icon48.png" width="26" height="26" alt="" />
+    <b class="display">Sendry</b>
     <label class="switch" title="Tüm sitelerde aç/kapat">
-      <input id="enabled-toggle" type="checkbox" />
-      <span class="slider"></span>
+      <input id="enabled-toggle" type="checkbox" aria-label="Sendry'yi çalıştır" />
+      <span></span>
     </label>
-  </header>
+  </div>
 
-  <section class="card site-card">
-    <span id="current-site" class="site">-</span>
-    <span id="site-status" class="status"></span>
-    <button id="site-toggle-btn" class="small-btn"></button>
-  </section>
+  <div class="site-row">
+    <span id="current-site" class="host">-</span>
+    <span id="site-status" class="st"></span>
+    <button id="site-toggle-btn" class="btn link" type="button"></button>
+  </div>
 
-  <section class="card">
-    <h2>Bugün</h2>
-    <div class="stats">
-      <div class="stat"><span id="stat-checked" class="num">0</span><span class="lbl">kontrol</span></div>
-      <div class="stat"><span id="stat-blocked" class="num warn">0</span><span class="lbl">durduruldu</span></div>
-      <div class="stat"><span id="stat-fixed" class="num ok">0</span><span class="lbl">düzeltildi</span></div>
-      <div class="stat"><span id="stat-bypassed" class="num">0</span><span class="lbl">yine de</span></div>
-    </div>
-    <ul id="detector-list" class="detector-list"></ul>
-    <p id="empty-state" class="empty-state" hidden>Bugün yakalanan bir sorun yok.</p>
-  </section>
+  <div class="today">
+    <p id="summary"></p>
+    <dl>
+      <div><dt>Durduruldu</dt><dd id="stat-blocked">0</dd></div>
+      <div><dt>Düzeltildi</dt><dd id="stat-fixed">0</dd></div>
+      <div><dt>Yine de</dt><dd id="stat-bypassed">0</dd></div>
+    </dl>
+  </div>
 
-  <footer>
-    <button id="open-options">Ayarlar ve metin testi</button>
-  </footer>
+  <ul id="detector-list" class="top-list"></ul>
+
+  <div class="foot">
+    <span id="checked-note"></span>
+    <button id="open-options" class="btn link" type="button">Ayarlar</button>
+  </div>
 
   <script src="common.js"></script>
   <script src="popup.js"></script>
